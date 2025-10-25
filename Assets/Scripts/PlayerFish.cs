@@ -6,24 +6,17 @@ using UnityEngine.InputSystem;
 /// </summary>
 public class PlayerFish : MonoBehaviour {
     [SerializeField] private float _moveSpeed = 5f;
-    [SerializeField] private float _worldBoundaryX = 1f;
-    [SerializeField] private float _worldBoundaryY = 10f;
-
+    [SerializeField] private float _worldBoundaryX = 50f;
+    [SerializeField] private float _worldBoundaryY = 50f;
 
     private Vector2 _currentMovement = Vector2.zero;
-
-    // プレイヤーの大きさ
-    private float _currentSize = 0;
-
-    // スコア(後で別に移すかも)
+    private float _currentSize = 1f;
     private int _currentScore = 0;
 
-    private CircleCollider2D _collider;
     private InputSystem_Actions _inputActions;
 
     private void Awake() {
         _inputActions = new InputSystem_Actions();
-        _collider = GetComponent<CircleCollider2D>();
     }
 
     private void OnEnable() {
@@ -52,10 +45,51 @@ public class PlayerFish : MonoBehaviour {
         }
     }
 
-    // 敵を食べた時に呼び出す
-    public void EatEnemy() {
+    /// <summary>
+    /// 敵を食べた時に呼び出す
+    /// </summary>
+    public void EatEnemy(int scoreValue, float enemySize) {
+        _currentScore += scoreValue;
+
+        // スコアに応じてサイズを更新
+        float newSize = 1f + (_currentScore / 100f);
+        UpdateSize(newSize);
+
+        Debug.Log($"Score: {_currentScore}, Size: {_currentSize:F2}");
     }
 
-    private void UpdateSize() {
+    private void UpdateSize(float newSize) {
+        _currentSize = newSize;
+        // スケール変更でビジュアルとコライダーが一緒に拡大される
+        transform.localScale = Vector3.one * _currentSize;
     }
+
+    /// <summary>
+    /// トリガーコライダーに触れた時に呼び出される
+    /// </summary>
+    private void OnTriggerEnter2D(Collider2D collision) {
+        EnemyFish enemy = collision.GetComponent<EnemyFish>();
+        if (enemy != null) {
+            // プレイヤーのサイズが敵より大きいかチェック
+            if (_currentSize > enemy.GetSize()) {
+                // 敵を食べる
+                EatEnemy(enemy.GetScoreValue(), enemy.GetSize());
+
+                // 敵を削除
+                Destroy(enemy.gameObject);
+            } else {
+                // プレイヤーが敵より小さい場合、ゲームオーバー
+                GameOver();
+            }
+        }
+    }
+
+    private void GameOver() {
+        Debug.Log("Game Over!");
+        Time.timeScale = 0f;  // ゲームを一時停止
+    }
+
+    public float GetCurrentSize() => _currentSize;
+    public int GetCurrentScore() => _currentScore;
+    public Vector3 GetPosition() => transform.position;
 }
