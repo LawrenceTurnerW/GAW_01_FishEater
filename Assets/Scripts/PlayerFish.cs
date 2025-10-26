@@ -65,8 +65,9 @@ public class PlayerFish : MonoBehaviour {
     public void EatEnemy(int scoreValue, float enemySize) {
         _currentScore += scoreValue;
 
-        // スコアに応じてサイズを更新
-        float newSize = 1f + (_currentScore / 100f);
+        // スコアに応じてサイズを更新（平方根で緩やかに成長）
+        // 例：Score 100 → Size 2.0, Score 400 → Size 3.0, Score 900 → Size 4.0
+        float newSize = 1f + Mathf.Sqrt(_currentScore) / 10f;
         UpdateSize(newSize);
 
         Debug.Log($"Score: {_currentScore}, Size: {_currentSize:F2}");
