@@ -6,17 +6,19 @@ using UnityEngine.InputSystem;
 /// </summary>
 public class PlayerFish : MonoBehaviour {
     [SerializeField] private float _moveSpeed = 5f;
-    [SerializeField] private float _worldBoundaryX = 50f;
-    [SerializeField] private float _worldBoundaryY = 50f;
+    [SerializeField] private float _baseBoundaryX = 50f;  // 基準となるX境界（ズーム10の場合）
+    [SerializeField] private float _baseBoundaryY = 50f;  // 基準となるY境界（ズーム10の場合）
 
     private Vector2 _currentMovement = Vector2.zero;
     private float _currentSize = 1f;
     private int _currentScore = 0;
 
     private InputSystem_Actions _inputActions;
+    private CameraController _cameraController;
 
     private void Awake() {
         _inputActions = new InputSystem_Actions();
+        _cameraController = FindObjectOfType<CameraController>();
     }
 
     private void OnEnable() {
@@ -37,9 +39,21 @@ public class PlayerFish : MonoBehaviour {
         if (_currentMovement.magnitude > 0) {
             Vector3 newPosition = transform.position + (Vector3)_currentMovement * _moveSpeed * Time.fixedDeltaTime;
 
-            // ワールド境界内に制限
-            newPosition.x = Mathf.Clamp(newPosition.x, -_worldBoundaryX, _worldBoundaryX);
-            newPosition.y = Mathf.Clamp(newPosition.y, -_worldBoundaryY, _worldBoundaryY);
+            // カメラのズームに応じた動的な境界を計算
+            float boundaryX = _baseBoundaryX;
+            float boundaryY = _baseBoundaryY;
+
+            if (_cameraController != null) {
+                float screenWidth = _cameraController.GetScreenWidth() / 2f;
+                float screenHeight = _cameraController.GetScreenHeight() / 2f;
+
+                boundaryX = screenWidth * 0.95f;  // 画面端から少し内側
+                boundaryY = screenHeight * 0.95f;
+            }
+
+            // 動的な境界内に制限
+            newPosition.x = Mathf.Clamp(newPosition.x, -boundaryX, boundaryX);
+            newPosition.y = Mathf.Clamp(newPosition.y, -boundaryY, boundaryY);
 
             transform.position = newPosition;
         }
@@ -79,14 +93,12 @@ public class PlayerFish : MonoBehaviour {
                 Destroy(enemy.gameObject);
             } else {
                 // プレイヤーが敵より小さい場合、ゲームオーバー
-                GameOver();
+                GameManager gameManager = FindObjectOfType<GameManager>();
+                if (gameManager != null) {
+                    gameManager.GameOver();
+                }
             }
         }
-    }
-
-    private void GameOver() {
-        Debug.Log("Game Over!");
-        Time.timeScale = 0f;  // ゲームを一時停止
     }
 
     public float GetCurrentSize() => _currentSize;

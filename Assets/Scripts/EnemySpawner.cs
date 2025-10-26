@@ -2,24 +2,26 @@ using UnityEngine;
 
 /// <summary>
 /// 敵魚を画面左右から無限にスポーンさせる
+/// ズーム値に応じて動的にスポーン位置を計算
 /// </summary>
 public class EnemySpawner : MonoBehaviour {
     [SerializeField] private GameObject _enemyPrefab;
     [SerializeField] private float _spawnIntervalMin = 0.5f;
     [SerializeField] private float _spawnIntervalMax = 2.0f;
-    [SerializeField] private float _cameraHeight = 10f;
-    [SerializeField] private float _cameraWidth = 17.77f;  // アスペクト比 16:9 の場合
 
     // 敵のサイズ設定
     [SerializeField] private float[] _enemySizes = new float[] { 0.3f, 0.5f, 0.8f, 1.2f, 1.5f };
 
     private float _nextSpawnTime = 0f;
     private Transform _spawnParent;
+    private CameraController _cameraController;
 
     private void Start() {
         // 敵を管理するための親オブジェクトを作成
         GameObject enemyContainer = new GameObject("EnemyContainer");
         _spawnParent = enemyContainer.transform;
+
+        _cameraController = FindObjectOfType<CameraController>();
 
         _nextSpawnTime = Time.time + Random.Range(_spawnIntervalMin, _spawnIntervalMax);
     }
@@ -33,12 +35,21 @@ public class EnemySpawner : MonoBehaviour {
     }
 
     private void SpawnEnemy() {
+        // カメラのズームに応じたスポーン範囲を計算
+        float screenWidth = 10f;  // デフォルト値
+        float screenHeight = 10f;
+
+        if (_cameraController != null) {
+            screenWidth = _cameraController.GetScreenWidth() / 2f;
+            screenHeight = _cameraController.GetScreenHeight() / 2f;
+        }
+
         // ランダムに左右を決定
         bool spawnFromLeft = Random.value > 0.5f;
 
-        // スポーン位置を決定
-        float spawnX = spawnFromLeft ? -_cameraWidth : _cameraWidth;
-        float spawnY = Random.Range(-_cameraHeight / 2f, _cameraHeight / 2f);
+        // スポーン位置を決定（画面端の少し外側）
+        float spawnX = spawnFromLeft ? -screenWidth - 1f : screenWidth + 1f;
+        float spawnY = Random.Range(-screenHeight, screenHeight);
         Vector3 spawnPosition = new Vector3(spawnX, spawnY, 0);
 
         // 移動方向を決定
