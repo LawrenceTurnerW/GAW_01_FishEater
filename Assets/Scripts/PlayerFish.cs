@@ -8,13 +8,16 @@ public class PlayerFish : MonoBehaviour {
     [SerializeField] private float _moveSpeed = 5f;
     [SerializeField] private float _baseBoundaryX = 50f;  // 基準となるX境界（ズーム10の場合）
     [SerializeField] private float _baseBoundaryY = 50f;  // 基準となるY境界（ズーム10の場合）
+    [SerializeField] private float _spriteScaleBase = 0.5f;  // スプライトの基準スケール
 
     private Vector2 _currentMovement = Vector2.zero;
     private float _currentSize = 1f;
     private int _currentScore = 0;
+    private float _lastMovementX = 0f;  // 最後の移動方向（スプライト反転用）
 
     private InputSystem_Actions _inputActions;
     private CameraController _cameraController;
+    private Transform _spriteTransform;
 
     private void Awake() {
         _inputActions = new InputSystem_Actions();
@@ -29,9 +32,39 @@ public class PlayerFish : MonoBehaviour {
         _inputActions.Player.Disable();
     }
 
+    private void Start() {
+        // 子オブジェクト「Sprite」を取得
+        _spriteTransform = transform.Find("Sprite");
+        if (_spriteTransform == null) {
+            Debug.LogWarning($"[{gameObject.name}] 子オブジェクト \"Sprite\" が見つかりません");
+        }
+
+        // 初期化：右向き
+        _lastMovementX = 1f;
+        UpdateSpriteDirection();
+    }
+
     private void Update() {
         // Input System から移動入力を取得
         _currentMovement = _inputActions.Player.Move.ReadValue<Vector2>();
+
+        // 水平方向の入力がある場合、最後の移動方向を更新してスプライトを反転
+        if (_currentMovement.x != 0) {
+            _lastMovementX = _currentMovement.x;
+            UpdateSpriteDirection();
+        }
+    }
+
+    /// <summary>
+    /// スプライトの向きを更新
+    /// </summary>
+    private void UpdateSpriteDirection() {
+        if (_spriteTransform == null)
+            return;
+
+        // 右に進む場合は反転（-0.5）、左に進む場合は通常（0.5）
+        float spriteScaleX = _lastMovementX > 0 ? -_spriteScaleBase : _spriteScaleBase;
+        _spriteTransform.localScale = new Vector3(spriteScaleX, _spriteScaleBase, 1f);
     }
 
     private void FixedUpdate() {

@@ -415,6 +415,7 @@ MonoBehaviour:
   _moveSpeed: 3
   _baseBoundaryX: 50
   _baseBoundaryY: 50
+  _spriteScaleBase: 0.1
 --- !u!212 &97912226
 SpriteRenderer:
   m_ObjectHideFlags: 0
